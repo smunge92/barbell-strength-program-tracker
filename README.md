@@ -56,7 +56,7 @@ Don't worry, this is easier than it looks! Just follow along step by step. 🙂
 
 **Option B: Clone with Git (if you're feeling fancy)**
 ```
-git clone https://github.com/YOUR_USERNAME/barbell-strength-tracker.git
+git clone https://github.com/smunge92/barbell-strength-program-tracker.git
 ```
 
 ### Step 3: Open Command Prompt in the project folder
