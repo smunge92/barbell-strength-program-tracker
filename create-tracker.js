@@ -375,31 +375,8 @@ async function createStartingStrengthTracker() {
     settingsSheet.getCell('B37').name = 'LightSquatPct';
     settingsSheet.getCell('B38').name = 'LightSquatInc';
 
-    // Add Exercise List in column F (for dropdown reference)
-    settingsSheet.getColumn(6).width = 20;
-    settingsSheet.getCell('F1').value = 'EXERCISE LIST';
-    settingsSheet.getCell('F1').font = { bold: true, color: { argb: colors.headerText } };
-    settingsSheet.getCell('F1').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
-
-    // Main lifts (rows 2-6)
-    const mainLifts = ['Squat', 'Bench Press', 'Deadlift', 'Overhead Press', 'Power Clean'];
-    mainLifts.forEach((lift, index) => {
-        settingsSheet.getCell(`F${index + 2}`).value = lift;
-        settingsSheet.getCell(`F${index + 2}`).font = { bold: true };
-    });
-
-    // Conditional exercises (rows 7-8)
-    // Light Squat: Appears when any main lift reaches stall threshold (intermediate transition)
-    settingsSheet.getCell('F7').value = { formula: 'IF(MAX(\'Program Phase\'!B9:B13)>=Settings!$B$21,"Light Squat","")' };
-    settingsSheet.getCell('F7').font = { italic: true, color: { argb: 'FF7030A0' } };
-    // Chin Ups: Appears after configured number of weeks
-    settingsSheet.getCell('F8').value = { formula: 'IF(Settings!$B$33>=Settings!$B$36,"Chin Ups","")' };
-    settingsSheet.getCell('F8').font = { italic: true, color: { argb: 'FF7030A0' } };
-
-    // Assistance exercises pulled from Assistance sheet (rows 9-23)
-    for (let i = 9; i <= 23; i++) {
-        settingsSheet.getCell(`F${i}`).value = { formula: `IF('Assistance Exercises'!A${i-7}="","",'Assistance Exercises'!A${i-7})` };
-    }
+    // Exercise list moved to Assistance Exercises sheet for cleaner organization
+    // Column F & G in Settings are no longer used for exercise list
 
     // ==================== ASSISTANCE EXERCISES SHEET ====================
     const assistanceSheet = workbook.addWorksheet('Assistance Exercises', {
@@ -409,49 +386,66 @@ async function createStartingStrengthTracker() {
     assistanceSheet.columns = [
         { key: 'exercise', width: 25 },
         { key: 'scheme', width: 15 },
-        { key: 'notes', width: 50 }
+        { key: 'notes', width: 40 },
+        { key: 'spacer', width: 3 },
+        { key: 'dropdown', width: 18 }
     ];
 
     // Title
-    const assistTitle = assistanceSheet.addRow(['ASSISTANCE EXERCISES']);
+    const assistTitle = assistanceSheet.addRow(['ASSISTANCE EXERCISES', '', '', '', 'EXERCISE LIST']);
     assistanceSheet.mergeCells('A1:C1');
     assistTitle.height = 30;
     assistTitle.getCell(1).font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
     assistTitle.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF9933FF' } };
     assistTitle.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    // Column E header for dropdown list
+    assistTitle.getCell(5).font = { bold: true, size: 11, color: { argb: colors.headerText } };
+    assistTitle.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
+    assistTitle.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
 
     // Instructions
-    const assistInstr = assistanceSheet.addRow(['Add or remove exercises below. These appear in the Workout Log dropdown but do NOT affect progression tracking.']);
+    const assistInstr = assistanceSheet.addRow(['Add or remove exercises below. These appear in the Workout Log dropdown but do NOT affect progression tracking.', '', '', '', 'Squat']);
     assistanceSheet.mergeCells('A2:C2');
     assistInstr.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF666666' } };
     assistInstr.height = 20;
+    // E2: Squat (main lift)
+    assistInstr.getCell(5).font = { bold: true };
 
-    assistanceSheet.addRow(['']); // Spacer
+    // Row 3: Spacer + Bench Press
+    const row3 = assistanceSheet.addRow(['', '', '', '', 'Bench Press']);
+    row3.getCell(5).font = { bold: true };
 
-    // Header
-    const assistHeader = assistanceSheet.addRow(['Exercise Name', 'Suggested Scheme', 'Notes']);
-    assistHeader.font = { bold: true, color: { argb: colors.headerText } };
-    assistHeader.eachCell(cell => {
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
-    });
+    // Header row + Deadlift
+    const assistHeader = assistanceSheet.addRow(['Exercise Name', 'Suggested Scheme', 'Notes', '', 'Deadlift']);
+    assistHeader.getCell(1).font = { bold: true, color: { argb: colors.headerText } };
+    assistHeader.getCell(2).font = { bold: true, color: { argb: colors.headerText } };
+    assistHeader.getCell(3).font = { bold: true, color: { argb: colors.headerText } };
+    assistHeader.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
+    assistHeader.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
+    assistHeader.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
+    // E4: Deadlift
+    assistHeader.getCell(5).font = { bold: true };
 
-    // Default assistance exercises (Chin Ups removed - now conditionally introduced)
+    // Default assistance exercises with corresponding dropdown entries
+    // Column E continues with: E5=OHP, E6=Power Clean, E7=Light Squat (conditional), E8=Chin Ups (conditional), E9+=Assistance
     const defaultAssistance = [
-        ['Barbell Curls', '3x10', 'Bicep isolation'],
-        ['Back Extension', '3x10-15', 'Lower back and glutes'],
-        ['Skull Crushers', '3x10', 'Tricep isolation - use EZ bar'],
-        ['Tricep Pushdown', '3x10-12', 'Cable machine'],
-        ['Dips', '3x8-10', 'Can add weight when bodyweight becomes easy'],
-        ['', '', ''],
-        ['', '', ''],
-        ['', '', ''],
-        ['', '', ''],
-        ['', '', '']
+        ['Barbell Curls', '3x10', 'Bicep isolation', '', 'Overhead Press'],           // Row 5, E5=OHP
+        ['Back Extension', '3x10-15', 'Lower back and glutes', '', 'Power Clean'],    // Row 6, E6=Power Clean
+        ['Skull Crushers', '3x10', 'Tricep isolation - use EZ bar', '', ''],          // Row 7, E7=Light Squat (formula)
+        ['Tricep Pushdown', '3x10-12', 'Cable machine', '', ''],                      // Row 8, E8=Chin Ups (formula)
+        ['Dips', '3x8-10', 'Can add weight when bodyweight becomes easy', '', ''],    // Row 9, E9=Barbell Curls (formula)
+        ['', '', '', '', ''],  // Row 10
+        ['', '', '', '', ''],  // Row 11
+        ['', '', '', '', ''],  // Row 12
+        ['', '', '', '', ''],  // Row 13
+        ['', '', '', '', '']   // Row 14
     ];
 
     defaultAssistance.forEach((row, index) => {
         const newRow = assistanceSheet.addRow(row);
-        // Highlight input cells
+        const rowNum = newRow.number; // Actual row number (5, 6, 7, ...)
+
+        // Highlight input cells for assistance exercises (columns A-C)
         for (let col = 1; col <= 3; col++) {
             newRow.getCell(col).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
             newRow.getCell(col).border = {
@@ -461,7 +455,29 @@ async function createStartingStrengthTracker() {
                 right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
             };
         }
+
+        // Style column E (dropdown list)
+        if (index < 2) {
+            // E5=Overhead Press, E6=Power Clean (already set as static values)
+            newRow.getCell(5).font = { bold: true };
+        }
     });
+
+    // Set formulas for conditional and assistance exercises in column E
+    // E7: Light Squat (conditional - appears when stall threshold reached)
+    assistanceSheet.getCell('E7').value = { formula: 'IF(MAX(\'Program Phase\'!B9:B13)>=Settings!$B$21,"Light Squat","")' };
+    assistanceSheet.getCell('E7').font = { italic: true, color: { argb: 'FF7030A0' } };
+
+    // E8: Chin Ups (conditional - appears after configured weeks)
+    assistanceSheet.getCell('E8').value = { formula: 'IF(Settings!$B$33>=Settings!$B$36,"Chin Ups","")' };
+    assistanceSheet.getCell('E8').font = { italic: true, color: { argb: 'FF7030A0' } };
+
+    // E9-E18: Reference assistance exercises from column A (A5-A14)
+    for (let i = 9; i <= 18; i++) {
+        const assistRow = i - 4; // E9->A5, E10->A6, etc.
+        assistanceSheet.getCell(`E${i}`).value = { formula: `IF(A${assistRow}="","",A${assistRow})` };
+        assistanceSheet.getCell(`E${i}`).font = { size: 10 };
+    }
 
     // Add note at bottom
     assistanceSheet.addRow(['']);
@@ -551,7 +567,38 @@ async function createStartingStrengthTracker() {
 
         // Target Weight Formula - calculates for main lifts including Light Squat (80% of Squat)
         // Light Squat: 80% of current Squat working weight OR last successful Light Squat + increment
-        const targetFormula = `IF(C${i}="","",IF(NOT(${isMainLift}),"—",IF(C${i}="Light Squat",IF(COUNTIF(C$10:C${i-1},"Light Squat")=0,ROUND(MAXIFS(F$10:F${i-1},C$10:C${i-1},"Squat",N$10:N${i-1},"OK")*Settings!$B$37/100/5,0)*5,SUMPRODUCT(MAX((C$10:C${i-1}="Light Squat")*(N$10:N${i-1}="OK")*F$10:F${i-1})+Settings!$B$38)),IF(COUNTIF(C$10:C${i-1},C${i})=0,IF(C${i}="Squat",Settings!$B$5,IF(C${i}="Bench Press",Settings!$B$6,IF(C${i}="Deadlift",Settings!$B$7,IF(C${i}="Overhead Press",Settings!$B$8,IF(C${i}="Power Clean",Settings!$B$9,0))))),SUMPRODUCT(MAX((C$10:C${i-1}=C${i})*(N$10:N${i-1}="OK")*F$10:F${i-1})+IF(C${i}="Squat",Settings!$B$12,IF(C${i}="Bench Press",Settings!$B$13,IF(C${i}="Deadlift",Settings!$B$14,IF(C${i}="Overhead Press",Settings!$B$15,IF(C${i}="Power Clean",Settings!$B$16,0))))))))))`;
+        // Row 10 special case: No previous rows exist, so always return starting weight (avoids invalid C$10:C9 range)
+        let targetFormula;
+        if (i === 10) {
+            // First data row - no previous data to look up, just return starting weight
+            targetFormula = `IF(C10="","",IF(NOT(${isMainLift}),"—",IF(C10="Light Squat",0,IF(C10="Squat",Settings!$B$5,IF(C10="Bench Press",Settings!$B$6,IF(C10="Deadlift",Settings!$B$7,IF(C10="Overhead Press",Settings!$B$8,IF(C10="Power Clean",Settings!$B$9,0))))))))`;
+        } else {
+            // Target weight formula using SUMPRODUCT for Excel 2013+ compatibility (MAXIFS requires Excel 2016+)
+            // SUMPRODUCT(MAX(...)) pattern works across all Excel versions
+            const startingWeightLookup = `IF(C${i}="Squat",Settings!$B$5,IF(C${i}="Bench Press",Settings!$B$6,IF(C${i}="Deadlift",Settings!$B$7,IF(C${i}="Overhead Press",Settings!$B$8,IF(C${i}="Power Clean",Settings!$B$9,0)))))`;
+            const incrementLookup = `IF(C${i}="Squat",Settings!$B$12,IF(C${i}="Bench Press",Settings!$B$13,IF(C${i}="Deadlift",Settings!$B$14,IF(C${i}="Overhead Press",Settings!$B$15,IF(C${i}="Power Clean",Settings!$B$16,0)))))`;
+
+            // Count previous OK entries for this exercise using SUMPRODUCT (Excel 2013 compatible)
+            const countOK = `SUMPRODUCT((C$10:C${i-1}=C${i})*(N$10:N${i-1}="OK")*1)`;
+
+            // Get max weight from previous OK entries using SUMPRODUCT(MAX(...))
+            const maxOKWeight = `SUMPRODUCT(MAX((C$10:C${i-1}=C${i})*(N$10:N${i-1}="OK")*(F$10:F${i-1})))`;
+
+            // For main lifts: if no previous "OK" entries exist, use starting weight; otherwise use max OK weight + increment
+            const mainLiftFormula = `IF(${countOK}=0,${startingWeightLookup},${maxOKWeight}+${incrementLookup})`;
+
+            // Light Squat calculations
+            const countLightSquat = `COUNTIF(C$10:C${i-1},"Light Squat")`;
+            const countLightSquatOK = `SUMPRODUCT((C$10:C${i-1}="Light Squat")*(N$10:N${i-1}="OK")*1)`;
+            const maxSquatOK = `SUMPRODUCT(MAX((C$10:C${i-1}="Squat")*(N$10:N${i-1}="OK")*(F$10:F${i-1})))`;
+            const maxLightSquatOK = `SUMPRODUCT(MAX((C$10:C${i-1}="Light Squat")*(N$10:N${i-1}="OK")*(F$10:F${i-1})))`;
+            const lightSquatFromSquat = `ROUND(${maxSquatOK}*Settings!$B$37/100/5,0)*5`;
+
+            // Light Squat: 80% of best Squat, or previous Light Squat + increment
+            const lightSquatFormula = `IF(${countLightSquat}=0,${lightSquatFromSquat},IF(${countLightSquatOK}=0,${lightSquatFromSquat},${maxLightSquatOK}+Settings!$B$38))`;
+
+            targetFormula = `IF(C${i}="","",IF(NOT(${isMainLift}),"—",IF(C${i}="Light Squat",${lightSquatFormula},${mainLiftFormula})))`;
+        }
         row.getCell(5).value = { formula: targetFormula };
 
         // Total Reps Formula
@@ -600,7 +647,7 @@ async function createStartingStrengthTracker() {
     workoutSheet.dataValidations.add('C10:C209', {
         type: 'list',
         allowBlank: true,
-        formulae: ['Settings!$F$2:$F$23']  // References combined exercise list from Settings (5 main + 2 conditional + 15 assistance)
+        formulae: ['\'Assistance Exercises\'!$E$2:$E$18']  // References exercise list in Assistance Exercises sheet
     });
 
     // Conditional formatting for STALL

@@ -98,16 +98,19 @@ async function testStartingStrengthTracker() {
     // ==================== TEST 5: NEW v2.5 - Conditional Exercise List ====================
     console.log('\n--- Test 5: NEW v2.5 - Conditional Exercise List ---');
 
-    // Main lifts (F2-F6) - static
-    test('Settings has Exercise List header', settings.getCell('F1').value === 'EXERCISE LIST');
-    test('Squat in exercise list', settings.getCell('F2').value === 'Squat');
-    test('Bench Press in exercise list', settings.getCell('F3').value === 'Bench Press');
-    test('Deadlift in exercise list', settings.getCell('F4').value === 'Deadlift');
-    test('Overhead Press in exercise list', settings.getCell('F5').value === 'Overhead Press');
-    test('Power Clean in exercise list', settings.getCell('F6').value === 'Power Clean');
+    // Exercise list is now in Assistance Exercises sheet column E
+    const assistSheet = workbook.getWorksheet('Assistance Exercises');
 
-    // Conditional exercises (F7-F8) - formulas
-    const lightSquatCell = settings.getCell('F7');
+    // Main lifts (E2-E6) - static
+    test('Assistance Exercises has Exercise List header', assistSheet.getCell('E1').value === 'EXERCISE LIST');
+    test('Squat in exercise list', assistSheet.getCell('E2').value === 'Squat');
+    test('Bench Press in exercise list', assistSheet.getCell('E3').value === 'Bench Press');
+    test('Deadlift in exercise list', assistSheet.getCell('E4').value === 'Deadlift');
+    test('Overhead Press in exercise list', assistSheet.getCell('E5').value === 'Overhead Press');
+    test('Power Clean in exercise list', assistSheet.getCell('E6').value === 'Power Clean');
+
+    // Conditional exercises (E7-E8) - formulas
+    const lightSquatCell = assistSheet.getCell('E7');
     test('Light Squat cell has formula', lightSquatCell.value && lightSquatCell.value.formula !== undefined);
     if (lightSquatCell.value && lightSquatCell.value.formula) {
         test('Light Squat formula references Program Phase', lightSquatCell.value.formula.includes('Program Phase'));
@@ -115,7 +118,7 @@ async function testStartingStrengthTracker() {
         test('Light Squat formula returns "Light Squat"', lightSquatCell.value.formula.includes('"Light Squat"'));
     }
 
-    const chinUpsCell = settings.getCell('F8');
+    const chinUpsCell = assistSheet.getCell('E8');
     test('Chin Ups cell has formula', chinUpsCell.value && chinUpsCell.value.formula !== undefined);
     if (chinUpsCell.value && chinUpsCell.value.formula) {
         test('Chin Ups formula references Current Week (B33)', chinUpsCell.value.formula.includes('B$33'));
@@ -123,11 +126,11 @@ async function testStartingStrengthTracker() {
         test('Chin Ups formula returns "Chin Ups"', chinUpsCell.value.formula.includes('"Chin Ups"'));
     }
 
-    // Assistance exercises (F9-F23) - shifted formulas
-    const assistFormulaCell = settings.getCell('F9');
-    test('Assistance exercises start at F9', assistFormulaCell.value && assistFormulaCell.value.formula !== undefined);
+    // Assistance exercises (E9-E18) - formulas referencing column A
+    const assistFormulaCell = assistSheet.getCell('E9');
+    test('Assistance exercises start at E9', assistFormulaCell.value && assistFormulaCell.value.formula !== undefined);
     if (assistFormulaCell.value && assistFormulaCell.value.formula) {
-        test('F9 references Assistance sheet A2', assistFormulaCell.value.formula.includes('Assistance Exercises'));
+        test('E9 references column A5', assistFormulaCell.value.formula.includes('A5'));
     }
 
     // ==================== TEST 6: Workout Log Structure ====================
@@ -173,12 +176,14 @@ async function testStartingStrengthTracker() {
     test('Scheme formula includes Light Squat', schemeFormula.includes('Light Squat'));
     test('Scheme formula shows Light Squat as 3x5', schemeFormula.includes('"Light Squat"') && schemeFormula.includes('3x5'));
 
-    const targetFormula = workoutLog.getCell('E10').value.formula;
-    test('Target Weight formula handles Light Squat', targetFormula.includes('Light Squat'));
-    test('Target Weight formula uses Light Squat Percentage (B37)', targetFormula.includes('B$37'));
-    test('Target Weight formula uses Light Squat Increment (B38)', targetFormula.includes('B$38'));
-    test('Target Weight formula calculates 80% of Squat for Light Squat',
-         targetFormula.includes('MAXIFS') && targetFormula.includes('"Squat"'));
+    const targetFormula10 = workoutLog.getCell('E10').value.formula;
+    test('Target Weight formula handles Light Squat', targetFormula10.includes('Light Squat'));
+    // Row 10 has special simplified formula (no previous data), check row 11 for full formula
+    const targetFormula11 = workoutLog.getCell('E11').value.formula;
+    test('Target Weight formula uses Light Squat Percentage (B37)', targetFormula11.includes('B$37'));
+    test('Target Weight formula uses Light Squat Increment (B38)', targetFormula11.includes('B$38'));
+    test('Target Weight formula calculates 80% of Squat for Light Squat (using SUMPRODUCT)',
+         targetFormula11.includes('SUMPRODUCT') && targetFormula11.includes('"Squat"'));
 
     const targetRepsFormula = workoutLog.getCell('M10').value.formula;
     test('Target Reps formula includes Light Squat', targetRepsFormula.includes('Light Squat'));
@@ -193,14 +198,14 @@ async function testStartingStrengthTracker() {
     test('Data validations are configured', validations !== undefined);
 
     const validationModel = JSON.stringify(workoutLog.dataValidations.model);
-    test('Dropdown references Settings exercise list', validationModel.includes('Settings'));
-    test('Dropdown range extends to F23 (for conditional + assistance)',
-         validationModel.includes('F$2:$F$23') || validationModel.includes('$F$2:$F$23'));
+    test('Dropdown references Assistance Exercises sheet', validationModel.includes('Assistance Exercises'));
+    test('Dropdown range uses E2:E18 exercise list',
+         validationModel.includes('E$2:$E$18') || validationModel.includes('$E$2:$E$18'));
 
     // ==================== TEST 9: Assistance Exercises Sheet (Chin Ups removed) ====================
     console.log('\n--- Test 9: Assistance Exercises Sheet (Chin Ups removed) ---');
 
-    const assistSheet = workbook.getWorksheet('Assistance Exercises');
+    // assistSheet already declared in Test 5
     test('Assistance Exercises sheet exists', assistSheet !== undefined);
     test('Assistance sheet has title', assistSheet.getCell('A1').value === 'ASSISTANCE EXERCISES');
     test('Assistance sheet has header row', assistSheet.getCell('A4').value === 'Exercise Name');
@@ -444,10 +449,11 @@ async function testStartingStrengthTracker() {
     test('Scheme formula handles assistance (3x10)', schemeFormula.includes('3x10'));
     test('Scheme formula handles Power Clean (5x3)', schemeFormula.includes('5x3'));
 
-    // Target Weight formula
-    test('Target Weight formula references Settings starting weights', targetFormula.includes('Settings!$B$5'));
-    test('Target Weight formula references Settings increments', targetFormula.includes('Settings!$B$12'));
-    test('Target Weight formula uses MAXIFS for progression', targetFormula.includes('SUMPRODUCT') || targetFormula.includes('MAX'));
+    // Target Weight formula (use row 11 which has full formula, row 10 is simplified)
+    const targetFormulaAdv = workoutLog.getCell('E11').value.formula;
+    test('Target Weight formula references Settings starting weights', targetFormulaAdv.includes('Settings!$B$5'));
+    test('Target Weight formula references Settings increments', targetFormulaAdv.includes('Settings!$B$12'));
+    test('Target Weight formula uses MAXIFS for progression', targetFormulaAdv.includes('SUMPRODUCT') || targetFormulaAdv.includes('MAX'));
 
     // Status formula
     test('Status formula checks OK/STALL', statusFormula.includes('OK') && statusFormula.includes('STALL'));
@@ -478,21 +484,21 @@ async function testStartingStrengthTracker() {
     // ==================== TEST 24: Exercise List Completeness ====================
     console.log('\n--- Test 24: Exercise List Structure Completeness ---');
 
-    // Verify exercise list structure: 5 main + 2 conditional + 15 assistance = 22 rows (F2:F23)
-    test('Main lifts occupy F2-F6 (5 rows)',
-         settings.getCell('F2').value === 'Squat' && settings.getCell('F6').value === 'Power Clean');
+    // Verify exercise list structure in Assistance Exercises column E: 5 main + 2 conditional + 10 assistance = 17 rows (E2:E18)
+    test('Main lifts occupy E2-E6 (5 rows)',
+         assistSheet.getCell('E2').value === 'Squat' && assistSheet.getCell('E6').value === 'Power Clean');
 
-    test('F7 is conditional Light Squat',
-         settings.getCell('F7').value && settings.getCell('F7').value.formula !== undefined);
+    test('E7 is conditional Light Squat',
+         assistSheet.getCell('E7').value && assistSheet.getCell('E7').value.formula !== undefined);
 
-    test('F8 is conditional Chin Ups',
-         settings.getCell('F8').value && settings.getCell('F8').value.formula !== undefined);
+    test('E8 is conditional Chin Ups',
+         assistSheet.getCell('E8').value && assistSheet.getCell('E8').value.formula !== undefined);
 
-    test('F9 starts assistance exercises',
-         settings.getCell('F9').value && settings.getCell('F9').value.formula !== undefined);
+    test('E9 starts assistance exercises',
+         assistSheet.getCell('E9').value && assistSheet.getCell('E9').value.formula !== undefined);
 
-    test('F23 ends assistance exercises',
-         settings.getCell('F23').value && settings.getCell('F23').value.formula !== undefined);
+    test('E18 ends assistance exercises',
+         assistSheet.getCell('E18').value && assistSheet.getCell('E18').value.formula !== undefined);
 
     // ==================== TEST 25: Named Ranges ====================
     console.log('\n--- Test 25: Named Ranges Verification ---');
@@ -534,7 +540,9 @@ async function testStartingStrengthTracker() {
     console.log('- Conditional Light Squat (appears at intermediate transition)');
     console.log('- Conditional Chin Ups (appears after configurable weeks)');
     console.log('- Light Squat target weight formula (80% of Squat)');
-    console.log('- Updated dropdown range (F2:F23)');
+    console.log('- Exercise list in Assistance Exercises column E (E2:E18)');
+    console.log('- Dropdown validation references Assistance Exercises sheet');
+    console.log('- Target Weight formulas use SUMPRODUCT (Excel 2013 compatible)');
     console.log('- Chin Ups removed from default assistance');
     console.log('- README updated with Exercise Introduction section');
     console.log('- Disclaimer added (not affiliated with Starting Strength, Inc.)');
