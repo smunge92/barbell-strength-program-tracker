@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Generated Excel files (users should generate their own)
+*.xlsx
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Claude Code internal folder
+.claude/
+
+# Personal notes and files
+Knowledge Base/
+*.txt
+nul

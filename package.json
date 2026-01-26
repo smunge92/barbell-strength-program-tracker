@@ -1,0 +1,24 @@
+{
+  "name": "barbell-strength-tracker",
+  "version": "2.5.0",
+  "description": "Excel-based workout tracker for novice linear progression barbell training",
+  "main": "create-tracker.js",
+  "scripts": {
+    "generate": "node create-tracker.js",
+    "test": "node test-tracker.js"
+  },
+  "keywords": [
+    "barbell",
+    "strength",
+    "workout",
+    "tracker",
+    "excel",
+    "linear-progression",
+    "fitness"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "exceljs": "^4.4.0"
+  }
+}
