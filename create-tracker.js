@@ -840,15 +840,16 @@ async function createStartingStrengthTracker() {
     });
 
     // Add 52 weeks of formulas (1 year of tracking)
+    // Using SUMPRODUCT(MAX(...)) for Excel 2013+ compatibility (MAXIFS requires Excel 2016+)
     for (let week = 1; week <= 52; week++) {
         const row = summarySheet.addRow([
             week,
             '', // Date will be filled manually or could add formula
-            { formula: `IFERROR(MAXIFS('Workout Log'!F:F,'Workout Log'!C:C,"Squat",'Workout Log'!N:N,"OK"),0)` },
-            { formula: `IFERROR(MAXIFS('Workout Log'!F:F,'Workout Log'!C:C,"Bench Press",'Workout Log'!N:N,"OK"),0)` },
-            { formula: `IFERROR(MAXIFS('Workout Log'!F:F,'Workout Log'!C:C,"Deadlift",'Workout Log'!N:N,"OK"),0)` },
-            { formula: `IFERROR(MAXIFS('Workout Log'!F:F,'Workout Log'!C:C,"Overhead Press",'Workout Log'!N:N,"OK"),0)` },
-            { formula: `IFERROR(MAXIFS('Workout Log'!F:F,'Workout Log'!C:C,"Power Clean",'Workout Log'!N:N,"OK"),0)` },
+            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Squat")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
+            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Bench Press")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
+            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Deadlift")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
+            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Overhead Press")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
+            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Power Clean")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
             { formula: `IFERROR(LOOKUP(2,1/('Body Weight Log'!B:B<>""),'Body Weight Log'!B:B),0)` }
         ]);
 
@@ -903,13 +904,13 @@ async function createStartingStrengthTracker() {
         }
     });
 
-    // Add PR summary
+    // Add PR summary - Using SUMPRODUCT(MAX(...)) for Excel 2013+ compatibility
     const prData = [
-        ['Squat PR:', { formula: 'IFERROR(MAXIFS(\'Workout Log\'!F:F,\'Workout Log\'!C:C,"Squat",\'Workout Log\'!N:N,"OK"),"No data")' }, 'lbs'],
-        ['Bench PR:', { formula: 'IFERROR(MAXIFS(\'Workout Log\'!F:F,\'Workout Log\'!C:C,"Bench Press",\'Workout Log\'!N:N,"OK"),"No data")' }, 'lbs'],
-        ['Deadlift PR:', { formula: 'IFERROR(MAXIFS(\'Workout Log\'!F:F,\'Workout Log\'!C:C,"Deadlift",\'Workout Log\'!N:N,"OK"),"No data")' }, 'lbs'],
-        ['OHP PR:', { formula: 'IFERROR(MAXIFS(\'Workout Log\'!F:F,\'Workout Log\'!C:C,"Overhead Press",\'Workout Log\'!N:N,"OK"),"No data")' }, 'lbs'],
-        ['Power Clean PR:', { formula: 'IFERROR(MAXIFS(\'Workout Log\'!F:F,\'Workout Log\'!C:C,"Power Clean",\'Workout Log\'!N:N,"OK"),"No data")' }, 'lbs'],
+        ['Squat PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Squat")*(\'Workout Log\'!$N$10:$N$209="OK")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
+        ['Bench PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Bench Press")*(\'Workout Log\'!$N$10:$N$209="OK")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
+        ['Deadlift PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Deadlift")*(\'Workout Log\'!$N$10:$N$209="OK")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
+        ['OHP PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Overhead Press")*(\'Workout Log\'!$N$10:$N$209="OK")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
+        ['Power Clean PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Power Clean")*(\'Workout Log\'!$N$10:$N$209="OK")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
     ];
 
     prData.forEach(row => {
