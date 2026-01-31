@@ -515,7 +515,13 @@ async function createStartingStrengthTracker() {
         { key: 'totalReps', width: 8 },
         { key: 'targetReps', width: 8 },
         { key: 'status', width: 8 },
-        { key: 'notes', width: 20 }
+        { key: 'notes', width: 20 },
+        // Helper columns for Progress Summary (hidden)
+        { key: 'squatWt', width: 10 },
+        { key: 'benchWt', width: 10 },
+        { key: 'deadliftWt', width: 10 },
+        { key: 'ohpWt', width: 10 },
+        { key: 'cleanWt', width: 10 }
     ];
 
     // Add exercise reference legend stacked in first rows
@@ -539,24 +545,30 @@ async function createStartingStrengthTracker() {
 
     const workoutHeader = workoutSheet.addRow([
         'Date', 'Type', 'Exercise', 'Scheme', 'Target Weight', 'Actual Weight',
-        'Set 1', 'Set 2', 'Set 3', 'Set 4', 'Set 5', 'Total Reps', 'Target Reps', 'Status', 'Notes'
+        'Set 1', 'Set 2', 'Set 3', 'Set 4', 'Set 5', 'Total Reps', 'Target Reps', 'Status', 'Notes',
+        'SquatWt', 'BenchWt', 'DeadliftWt', 'OHPWt', 'CleanWt'
     ]);
     workoutHeader.font = { bold: true, color: { argb: colors.headerText } };
     workoutHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
 
     const subHeader = workoutSheet.addRow([
         '', 'A/B', 'Select ↓', 'Auto', 'Auto', 'Enter',
-        'Reps', 'Reps', 'Reps', '-', '-', 'Auto', 'Auto', 'Auto', ''
+        'Reps', 'Reps', 'Reps', '-', '-', 'Auto', 'Auto', 'Auto', '',
+        'Helper', 'Helper', 'Helper', 'Helper', 'Helper'
     ]);
     subHeader.font = { italic: true, size: 9 };
     subHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.subHeaderBg } };
     // Gray out Set 4/Set 5 in subheader to indicate rarely used
     subHeader.getCell(10).font = { italic: true, size: 9, color: { argb: 'FF999999' } };
     subHeader.getCell(11).font = { italic: true, size: 9, color: { argb: 'FF999999' } };
+    // Gray out helper columns
+    for (let col = 16; col <= 20; col++) {
+        subHeader.getCell(col).font = { italic: true, size: 9, color: { argb: 'FF999999' } };
+    }
 
     // Add 200 workout rows with formulas (data starts at row 10 after 7 legend rows + header + subheader)
     for (let i = 10; i <= 209; i++) {
-        const row = workoutSheet.addRow(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        const row = workoutSheet.addRow(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
 
         // Define main lifts for formula checks (includes Light Squat for tracking)
         const isMainLift = `OR(C${i}="Squat",C${i}="Bench Press",C${i}="Deadlift",C${i}="Overhead Press",C${i}="Power Clean",C${i}="Light Squat")`;
@@ -611,8 +623,16 @@ async function createStartingStrengthTracker() {
         // Status Formula - OK/STALL for main lifts (including Light Squat), "—" for assistance
         row.getCell(14).value = { formula: `IF(C${i}="","",IF(NOT(${isMainLift}),"—",IF(L${i}>=M${i},"OK","STALL")))` };
 
+        // Helper columns for Progress Summary - extract weight by exercise (P-T = columns 16-20)
+        // These return the Actual Weight if the exercise matches, otherwise 0
+        row.getCell(16).value = { formula: `IF($C${i}="Squat",$F${i},0)` };  // SquatWt
+        row.getCell(17).value = { formula: `IF($C${i}="Bench Press",$F${i},0)` };  // BenchWt
+        row.getCell(18).value = { formula: `IF($C${i}="Deadlift",$F${i},0)` };  // DeadliftWt
+        row.getCell(19).value = { formula: `IF($C${i}="Overhead Press",$F${i},0)` };  // OHPWt
+        row.getCell(20).value = { formula: `IF($C${i}="Power Clean",$F${i},0)` };  // CleanWt
+
         // Add borders
-        for (let col = 1; col <= 15; col++) {
+        for (let col = 1; col <= 20; col++) {
             row.getCell(col).border = {
                 top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
                 left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
@@ -636,6 +656,11 @@ async function createStartingStrengthTracker() {
 
     // Freeze header rows (9 rows: 7 legend + header + subheader)
     workoutSheet.views = [{ state: 'frozen', ySplit: 9 }];
+
+    // Hide helper columns (P-T = columns 16-20)
+    for (let col = 16; col <= 20; col++) {
+        workoutSheet.getColumn(col).hidden = true;
+    }
 
     // Data validations
     workoutSheet.dataValidations.add('B10:B209', {
@@ -839,21 +864,31 @@ async function createStartingStrengthTracker() {
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
     });
 
+    // Add DMAX criteria area (hidden column I)
+    // Column I contains "Date" header + criteria values for each week
+    summarySheet.getColumn(9).width = 12;
+    summarySheet.getColumn(9).hidden = true;
+    summarySheet.getCell('I3').value = 'Date';  // Header must match Workout Log column header exactly
+
     // Add 52 weeks of formulas (1 year of tracking)
-    // Using SUMPRODUCT(MAX(...)) for max weight by exercise up to the End Date
-    // This pattern works reliably in Excel 2013+ for conditional max
+    // Using DMAX with helper columns - reliable across all Excel versions
+    // DMAX finds the maximum value in a database column that matches criteria
     for (let week = 1; week <= 52; week++) {
         const rowNum = week + 3; // Row 4 = Week 1, Row 5 = Week 2, etc.
-        const row = summarySheet.addRow([
-            week,
-            '', // End Date - user fills this in
-            { formula: `IF(B${rowNum}="","",IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<>"")*('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Squat")*('Workout Log'!$F$10:$F$209))),0))` },
-            { formula: `IF(B${rowNum}="","",IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<>"")*('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Bench Press")*('Workout Log'!$F$10:$F$209))),0))` },
-            { formula: `IF(B${rowNum}="","",IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<>"")*('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Deadlift")*('Workout Log'!$F$10:$F$209))),0))` },
-            { formula: `IF(B${rowNum}="","",IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<>"")*('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Overhead Press")*('Workout Log'!$F$10:$F$209))),0))` },
-            { formula: `IF(B${rowNum}="","",IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<>"")*('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Power Clean")*('Workout Log'!$F$10:$F$209))),0))` },
-            { formula: `IF(B${rowNum}="","",IFERROR(SUMPRODUCT(MAX(('Body Weight Log'!$A$2:$A$200<>"")*('Body Weight Log'!$A$2:$A$200<=B${rowNum})*('Body Weight Log'!$B$2:$B$200))),0))` }
-        ]);
+
+        // Set cells directly to avoid row ordering issues
+        summarySheet.getCell(`A${rowNum}`).value = week;
+        summarySheet.getCell(`B${rowNum}`).value = ''; // End Date - user fills this in
+        summarySheet.getCell(`C${rowNum}`).value = { formula: `IF(B${rowNum}="","",IFERROR(DMAX('Workout Log'!$A$8:$T$209,"SquatWt",$I$3:$I${rowNum}),0))` };
+        summarySheet.getCell(`D${rowNum}`).value = { formula: `IF(B${rowNum}="","",IFERROR(DMAX('Workout Log'!$A$8:$T$209,"BenchWt",$I$3:$I${rowNum}),0))` };
+        summarySheet.getCell(`E${rowNum}`).value = { formula: `IF(B${rowNum}="","",IFERROR(DMAX('Workout Log'!$A$8:$T$209,"DeadliftWt",$I$3:$I${rowNum}),0))` };
+        summarySheet.getCell(`F${rowNum}`).value = { formula: `IF(B${rowNum}="","",IFERROR(DMAX('Workout Log'!$A$8:$T$209,"OHPWt",$I$3:$I${rowNum}),0))` };
+        summarySheet.getCell(`G${rowNum}`).value = { formula: `IF(B${rowNum}="","",IFERROR(DMAX('Workout Log'!$A$8:$T$209,"CleanWt",$I$3:$I${rowNum}),0))` };
+        summarySheet.getCell(`H${rowNum}`).value = { formula: `IF(B${rowNum}="","",IFERROR(DMAX('Body Weight Log'!$A$1:$B$200,"Weight (lbs)",$I$3:$I${rowNum}),0))` };
+        summarySheet.getCell(`I${rowNum}`).value = { formula: `IF(B${rowNum}="","","<="&B${rowNum})` };
+
+        // Get row for styling
+        const row = summarySheet.getRow(rowNum);
 
         row.eachCell((cell, colNumber) => {
             cell.border = {
@@ -906,13 +941,14 @@ async function createStartingStrengthTracker() {
         }
     });
 
-    // Add PR summary - Using SUMPRODUCT(MAX(...)) for reliable max calculation
+    // Add PR summary - Using simple MAX on helper columns (P-T in Workout Log)
+    // Helper columns contain the weight for each exercise (or 0), so MAX finds the highest
     const prData = [
-        ['Squat PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Squat")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
-        ['Bench PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Bench Press")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
-        ['Deadlift PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Deadlift")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
-        ['OHP PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Overhead Press")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
-        ['Power Clean PR:', { formula: 'IFERROR(SUMPRODUCT(MAX((\'Workout Log\'!$C$10:$C$209="Power Clean")*(\'Workout Log\'!$F$10:$F$209))),"No data")' }, 'lbs'],
+        ['Squat PR:', { formula: 'IF(MAX(\'Workout Log\'!$P$10:$P$209)=0,"No data",MAX(\'Workout Log\'!$P$10:$P$209))' }, 'lbs'],
+        ['Bench PR:', { formula: 'IF(MAX(\'Workout Log\'!$Q$10:$Q$209)=0,"No data",MAX(\'Workout Log\'!$Q$10:$Q$209))' }, 'lbs'],
+        ['Deadlift PR:', { formula: 'IF(MAX(\'Workout Log\'!$R$10:$R$209)=0,"No data",MAX(\'Workout Log\'!$R$10:$R$209))' }, 'lbs'],
+        ['OHP PR:', { formula: 'IF(MAX(\'Workout Log\'!$S$10:$S$209)=0,"No data",MAX(\'Workout Log\'!$S$10:$S$209))' }, 'lbs'],
+        ['Power Clean PR:', { formula: 'IF(MAX(\'Workout Log\'!$T$10:$T$209)=0,"No data",MAX(\'Workout Log\'!$T$10:$T$209))' }, 'lbs'],
     ];
 
     prData.forEach(row => {

@@ -259,9 +259,9 @@ async function testStartingStrengthTracker() {
          summaryHeaders.every((h, i) => actualSummaryHeaders[i] === h),
          `Got: ${actualSummaryHeaders.join(', ')}`);
 
-    test('Squat SUMPRODUCT formula exists',
+    test('Squat DMAX formula exists',
          summary.getCell('C4').value && summary.getCell('C4').value.formula &&
-         summary.getCell('C4').value.formula.includes('SUMPRODUCT'));
+         summary.getCell('C4').value.formula.includes('DMAX'));
     test('Week 1 exists', summary.getCell('A4').value === 1);
     test('Week 52 exists', summary.getCell('A55').value === 52);
 
@@ -274,7 +274,7 @@ async function testStartingStrengthTracker() {
     test('Chart title exists', chart.getCell('A1').value && chart.getCell('A1').value.includes('CHART'));
     test('Squat PR formula exists',
          chart.getCell('B14').value && chart.getCell('B14').value.formula &&
-         chart.getCell('B14').value.formula.includes('SUMPRODUCT'));
+         chart.getCell('B14').value.formula.includes('MAX'));
 
     // ==================== TEST 14: Program Phase Auto-Detection ====================
     console.log('\n--- Test 14: Program Phase Auto-Detection ---');
@@ -464,8 +464,8 @@ async function testStartingStrengthTracker() {
 
     const squatMaxFormula = summary.getCell('C4').value.formula;
     test('Squat formula references Workout Log', squatMaxFormula.includes('Workout Log'));
-    test('Squat formula uses SUMPRODUCT', squatMaxFormula.includes('SUMPRODUCT'));
-    test('Squat formula checks for OK status', squatMaxFormula.includes('OK'));
+    test('Squat formula uses DMAX', squatMaxFormula.includes('DMAX'));
+    test('Squat formula uses helper column SquatWt', squatMaxFormula.includes('SquatWt'));
 
     // ==================== TEST 23: Program Phase Formulas ====================
     console.log('\n--- Test 23: Program Phase Formula Verification ---');
