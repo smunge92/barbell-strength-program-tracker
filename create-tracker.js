@@ -11,13 +11,19 @@ async function createStartingStrengthTracker() {
         headerText: 'FFFFFFFF',
         subHeaderBg: 'FFD6DCE4',
         lightBg: 'FFF2F2F2',
-        workoutA: 'FFDCE6F1',
-        workoutB: 'FFE2EFDA',
-        warning: 'FFFFC000',
         success: 'FF92D050',
-        danger: 'FFFF6B6B',
         inputCell: 'FFFFFFCC'
     };
+
+    // Reusable style helpers
+    const thinBorder = {
+        top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
+        right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
+    };
+    const inputFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
+    const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
 
     // ==================== README SHEET ====================
     const readmeSheet = workbook.addWorksheet('README', {
@@ -30,16 +36,6 @@ async function createStartingStrengthTracker() {
         { key: 'col3', width: 50 },
         { key: 'col4', width: 5 }
     ];
-
-    // Helper function to add a styled row
-    const addReadmeRow = (text, style = {}) => {
-        const row = readmeSheet.addRow(['', text, '', '']);
-        if (style.font) row.getCell(2).font = style.font;
-        if (style.fill) row.getCell(2).fill = style.fill;
-        if (style.alignment) row.getCell(2).alignment = style.alignment;
-        if (style.merge) readmeSheet.mergeCells(row.number, 2, row.number, 3);
-        return row;
-    };
 
     // ===== HEADER BANNER =====
     const bannerRow1 = readmeSheet.addRow(['', '', '', '']);
@@ -339,13 +335,8 @@ async function createStartingStrengthTracker() {
             newRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.subHeaderBg } };
         }
         if (row[1] !== '' && typeof row[1] === 'number') {
-            newRow.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-            newRow.getCell(2).border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-            };
+            newRow.getCell(2).fill = inputFill;
+            newRow.getCell(2).border = thinBorder;
         }
     });
 
@@ -374,9 +365,6 @@ async function createStartingStrengthTracker() {
     settingsSheet.getCell('B36').name = 'ChinUpsIntroWeek';
     settingsSheet.getCell('B37').name = 'LightSquatPct';
     settingsSheet.getCell('B38').name = 'LightSquatInc';
-
-    // Exercise list moved to Assistance Exercises sheet for cleaner organization
-    // Column F & G in Settings are no longer used for exercise list
 
     // ==================== ASSISTANCE EXERCISES SHEET ====================
     const assistanceSheet = workbook.addWorksheet('Assistance Exercises', {
@@ -417,14 +405,11 @@ async function createStartingStrengthTracker() {
 
     // Header row + Deadlift
     const assistHeader = assistanceSheet.addRow(['Exercise Name', 'Suggested Scheme', 'Notes', '', 'Deadlift']);
-    assistHeader.getCell(1).font = { bold: true, color: { argb: colors.headerText } };
-    assistHeader.getCell(2).font = { bold: true, color: { argb: colors.headerText } };
-    assistHeader.getCell(3).font = { bold: true, color: { argb: colors.headerText } };
-    assistHeader.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
-    assistHeader.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
-    assistHeader.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
-    // E4: Deadlift
-    assistHeader.getCell(5).font = { bold: true };
+    [1, 2, 3].forEach(col => {
+        assistHeader.getCell(col).font = { bold: true, color: { argb: colors.headerText } };
+        assistHeader.getCell(col).fill = headerFill;
+    });
+    assistHeader.getCell(5).font = { bold: true }; // E4: Deadlift
 
     // Default assistance exercises with corresponding dropdown entries
     // Column E continues with: E5=OHP, E6=Power Clean, E7=Light Squat (conditional), E8=Chin Ups (conditional), E9+=Assistance
@@ -447,13 +432,8 @@ async function createStartingStrengthTracker() {
 
         // Highlight input cells for assistance exercises (columns A-C)
         for (let col = 1; col <= 3; col++) {
-            newRow.getCell(col).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-            newRow.getCell(col).border = {
-                top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
-            };
+            newRow.getCell(col).fill = inputFill;
+            newRow.getCell(col).border = thinBorder;
         }
 
         // Style column E (dropdown list)
@@ -631,27 +611,16 @@ async function createStartingStrengthTracker() {
         row.getCell(19).value = { formula: `IF($C${i}="Overhead Press",$F${i},0)` };  // OHPWt
         row.getCell(20).value = { formula: `IF($C${i}="Power Clean",$F${i},0)` };  // CleanWt
 
-        // Add borders
+        // Add borders to all cells
         for (let col = 1; col <= 20; col++) {
-            row.getCell(col).border = {
-                top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
-            };
+            row.getCell(col).border = thinBorder;
         }
 
         // Input cells highlighting (only the cells user needs to fill)
-        row.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-        row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-        row.getCell(3).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-        row.getCell(6).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-        // Set columns - highlight S1-S3 normally, S4-S5 grayed (rarely used)
-        row.getCell(7).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-        row.getCell(8).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-        row.getCell(9).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-        row.getCell(10).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } }; // Grayed S4
-        row.getCell(11).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } }; // Grayed S5
+        [1, 2, 3, 6, 7, 8, 9].forEach(col => row.getCell(col).fill = inputFill);
+        // Grayed out Set 4/Set 5 (rarely used)
+        row.getCell(10).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
+        row.getCell(11).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8E8E8' } };
     }
 
     // Freeze header rows (9 rows: 7 legend + header + subheader)
@@ -824,13 +793,8 @@ async function createStartingStrengthTracker() {
     for (let i = 0; i < 100; i++) {
         const newRow = bodyWeightSheet.addRow(['', '', '', '', '', '']);
         for (let col = 1; col <= 3; col++) {
-            newRow.getCell(col).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-            newRow.getCell(col).border = {
-                top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
-            };
+            newRow.getCell(col).fill = inputFill;
+            newRow.getCell(col).border = thinBorder;
         }
     }
 
@@ -887,20 +851,12 @@ async function createStartingStrengthTracker() {
         summarySheet.getCell(`H${rowNum}`).value = { formula: `IF(B${rowNum}="","",IFERROR(DMAX('Body Weight Log'!$A$1:$B$200,"Weight (lbs)",$I$3:$I${rowNum}),0))` };
         summarySheet.getCell(`I${rowNum}`).value = { formula: `IF(B${rowNum}="","","<="&B${rowNum})` };
 
-        // Get row for styling
-        const row = summarySheet.getRow(rowNum);
-
-        row.eachCell((cell, colNumber) => {
-            cell.border = {
-                top: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                left: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } },
-                right: { style: 'thin', color: { argb: 'FFD0D0D0' } }
-            };
-            if (colNumber === 2) {
-                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.inputCell } };
-            }
-        });
+        // Style the row (columns A-H only, skip hidden column I)
+        for (let col = 1; col <= 8; col++) {
+            const cell = summarySheet.getCell(rowNum, col);
+            cell.border = thinBorder;
+            if (col === 2) cell.fill = inputFill;
+        }
     }
 
     summarySheet.addRow(['']);
@@ -1000,33 +956,22 @@ async function createStartingStrengthTracker() {
     stallSubHeader.font = { bold: true };
 
     // Stall count formulas for each exercise
-    const exercises = [
-        { name: 'Squat', formula: 'COUNTIF(\'Workout Log\'!C:C,"Squat")-COUNTIF(\'Workout Log\'!M:M,"OK")' },
-        { name: 'Bench Press', formula: 'COUNTIF(\'Workout Log\'!C:C,"Bench Press")-COUNTIF(\'Workout Log\'!M:M,"OK")' },
-        { name: 'Deadlift', formula: 'COUNTIF(\'Workout Log\'!C:C,"Deadlift")-COUNTIF(\'Workout Log\'!M:M,"OK")' },
-        { name: 'Overhead Press', formula: 'COUNTIF(\'Workout Log\'!C:C,"Overhead Press")-COUNTIF(\'Workout Log\'!M:M,"OK")' },
-        { name: 'Power Clean', formula: 'COUNTIF(\'Workout Log\'!C:C,"Power Clean")-COUNTIF(\'Workout Log\'!M:M,"OK")' }
-    ];
+    const exercises = ['Squat', 'Bench Press', 'Deadlift', 'Overhead Press', 'Power Clean'];
 
-    exercises.forEach((exercise, index) => {
+    exercises.forEach((exerciseName, index) => {
         const rowNum = 9 + index;
-        const stallFormula = `SUMPRODUCT((\'Workout Log\'!C$10:C$209="${exercise.name}")*(\'Workout Log\'!N$10:N$209="STALL")*1)`;
+        const stallFormula = `SUMPRODUCT(('Workout Log'!C$10:C$209="${exerciseName}")*('Workout Log'!N$10:N$209="STALL")*1)`;
         const statusFormula = `IF(B${rowNum}>=Settings!$B$21,"🔴 TRANSITION",IF(B${rowNum}>=2,"🟡 WARNING",IF(B${rowNum}>=1,"🟠 MONITOR","🟢 ON TRACK")))`;
 
         const row = phaseSheet.addRow([
-            exercise.name,
+            exerciseName,
             { formula: stallFormula },
             '',
             { formula: statusFormula }
         ]);
 
         row.getCell(2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.lightBg } };
-        row.getCell(2).border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-        };
+        row.getCell(2).border = thinBorder;
         row.getCell(2).alignment = { horizontal: 'center' };
     });
 

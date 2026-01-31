@@ -274,6 +274,36 @@ Feel free to:
 
 This is an unofficial community tool. Not affiliated with or endorsed by Starting Strength, Inc. or Aasgaard Company. The program is based on publicly available information from "Starting Strength: Basic Barbell Training" by Mark Rippetoe.
 
+## Direct Download
+
+Don't want to generate the file yourself? Download the latest pre-built Excel file:
+
+**[Barbell_Strength_Tracker_2026-01-31.xlsx](./Barbell_Strength_Tracker_2026-01-31.xlsx)**
+
+Just download, open in Excel, and start tracking!
+
+---
+
+## Changelog
+
+### 2026-01-31
+**Bug Fixes & Optimizations**
+- Fixed Progress Summary formulas - now uses DMAX with helper columns for reliable date filtering
+- Fixed Progress Chart PR formulas - uses simple MAX on helper columns
+- Added hidden helper columns (P-T) in Workout Log for each exercise weight
+- Resolved #VALUE! errors that occurred with various Excel versions
+- Code optimization: removed unused functions, added reusable style helpers
+- Reduced code by 55 lines while maintaining full functionality
+
+### Previous (v2.5)
+- Smart Exercise Introduction: Light Squat and Chin Ups appear based on training progress
+- Session/Week tracking auto-calculated from Workout Log
+- Exercise list moved to Assistance Exercises sheet column E
+- Target Weight formulas use SUMPRODUCT for Excel 2013+ compatibility
+- 169 automated tests ensure reliability
+
+---
+
 ## License
 
 MIT License - use it, modify it, share it, whatever you want.

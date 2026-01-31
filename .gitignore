@@ -2,7 +2,11 @@
 node_modules/
 
 # Generated Excel files (users should generate their own)
-*.xlsx
+Barbell_Strength_Tracker.xlsx
+*_TEST*.xlsx
+
+# Keep dated release files for direct download
+!Barbell_Strength_Tracker_????-??-??.xlsx
 
 # OS files
 .DS_Store
