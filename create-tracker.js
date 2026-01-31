@@ -841,16 +841,18 @@ async function createStartingStrengthTracker() {
 
     // Add 52 weeks of formulas (1 year of tracking)
     // Using SUMPRODUCT(MAX(...)) for Excel 2013+ compatibility (MAXIFS requires Excel 2016+)
+    // Each week's formula filters by End Date (Column B) to show PR as of that week
     for (let week = 1; week <= 52; week++) {
+        const rowNum = week + 3; // Row 4 = Week 1, Row 5 = Week 2, etc.
         const row = summarySheet.addRow([
             week,
-            '', // Date will be filled manually or could add formula
-            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Squat")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
-            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Bench Press")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
-            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Deadlift")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
-            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Overhead Press")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
-            { formula: `IFERROR(SUMPRODUCT(MAX(('Workout Log'!$C$10:$C$209="Power Clean")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0)` },
-            { formula: `IFERROR(LOOKUP(2,1/('Body Weight Log'!B:B<>""),'Body Weight Log'!B:B),0)` }
+            '', // End Date - user fills this in
+            { formula: `IF(B${rowNum}="",0,IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Squat")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0))` },
+            { formula: `IF(B${rowNum}="",0,IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Bench Press")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0))` },
+            { formula: `IF(B${rowNum}="",0,IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Deadlift")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0))` },
+            { formula: `IF(B${rowNum}="",0,IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Overhead Press")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0))` },
+            { formula: `IF(B${rowNum}="",0,IFERROR(SUMPRODUCT(MAX(('Workout Log'!$A$10:$A$209<=B${rowNum})*('Workout Log'!$C$10:$C$209="Power Clean")*('Workout Log'!$N$10:$N$209="OK")*('Workout Log'!$F$10:$F$209))),0))` },
+            { formula: `IF(B${rowNum}="",0,IFERROR(SUMPRODUCT(MAX(('Body Weight Log'!$A$2:$A$200<=B${rowNum})*('Body Weight Log'!$B$2:$B$200))),0))` }
         ]);
 
         row.eachCell((cell, colNumber) => {
