@@ -278,13 +278,21 @@ This is an unofficial community tool. Not affiliated with or endorsed by Startin
 
 Don't want to generate the file yourself? Download the latest pre-built Excel file:
 
-**[Barbell_Strength_Tracker_2026-01-31.xlsx](./Barbell_Strength_Tracker_2026-01-31.xlsx)**
+**[Barbell_Strength_Tracker_2026-02-01.xlsx](./Barbell_Strength_Tracker_2026-02-01.xlsx)**
 
 Just download, open in Excel, and start tracking!
 
 ---
 
 ## Changelog
+
+### 2026-02-01
+**Verification & Cleanup Release**
+- All 169 automated tests passing (100% success rate)
+- Progress Summary: DMAX formulas with helper columns working correctly
+- Progress Chart: MAX formulas on helper columns displaying PRs properly
+- Cleaned up temporary/test files from repository
+- Verified Excel 2013+ compatibility (SUMPRODUCT-based formulas)
 
 ### 2026-01-31
 **Bug Fixes & Optimizations**
